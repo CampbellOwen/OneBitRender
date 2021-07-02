@@ -1,7 +1,10 @@
 
 file(GLOB HEADER_LIST CONFIGURE_DEPENDS "${OneBitRender_SOURCE_DIR}/include/OneBitRender/*.h")
 
-add_library(onebitrender renderer.cpp ${HEADER_LIST})
+add_library( onebitrender 
+renderer.cpp 
+rasterizer.cpp
+${HEADER_LIST})
 
 target_include_directories(onebitrender PUBLIC ../include)
 

@@ -41,7 +41,7 @@ int main()
     }
 
     // Create window
-    SDL_Window* window = SDL_CreateWindow("Basic C++ SDL project", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+    SDL_Window* window = SDL_CreateWindow("OneBitRender", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                           SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window)
     {
@@ -64,14 +64,14 @@ int main()
                                   OneBit::RENDER_HEIGHT);
 
             OneBit::Renderer obRenderer;
-            obRenderer.Clear(128);
 
-            auto backbuffer = obRenderer.GetBackbuffer();
-
-            CopyImageToTexture(renderTexture, backbuffer.data());
+            std::vector<OneBit::Vertex> vertices = {
+                {0.5, 0.25, 0, 0, 0, 0}, {0.75, 0.75, 0, 0, 0, 0}, {0.25, 0.75, 0, 0, 0, 0}};
 
             // Event loop exit flag
             bool quit = false;
+
+            uint32_t t = 0;
 
             // Event loop
             while (!quit)
@@ -79,18 +79,30 @@ int main()
                 SDL_Event e;
 
                 // Wait indefinitely for the next available event
-                SDL_WaitEvent(&e);
-
-                // User requests quit
-                if (e.type == SDL_QUIT)
+                while (SDL_PollEvent(&e))
                 {
-                    quit = true;
+                    // User requests quit
+                    if (e.type == SDL_QUIT)
+                    {
+                        quit = true;
+                    }
                 }
+
+                vertices[0].y = 0.25 + (0.2 * sin(0.01 * t));
+
+                obRenderer.Clear(128);
+
+                obRenderer.Render(vertices);
+
+                auto backbuffer = obRenderer.GetBackbuffer();
+                CopyImageToTexture(renderTexture, backbuffer.data());
 
                 SDL_RenderCopy(renderer, renderTexture, NULL, NULL);
 
                 // Update screen
                 SDL_RenderPresent(renderer);
+
+                t++;
             }
 
             SDL_DestroyTexture(renderTexture);
