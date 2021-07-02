@@ -68,7 +68,9 @@ int main()
             obRenderer.SetLineColour(OneBit::LineColour::BLACK);
 
             std::vector<OneBit::Vertex> vertices = {
-                {0.5, 0.25, 0, 0, 0, 0}, {0.75, 0.75, 0, 0, 0, 0}, {0.25, 0.75, 0, 0, 0, 0}};
+                {0.5, 0.25, 0, 0, 0, 0}, {0.75, 0.75, 0, 0, 0, 0}, {0.25, 0.75, 0, 0, 0, 0},
+                {0.1, 0.1, 0, 0, 0, 0},  {0.2, 0.15, 0, 0, 0, 0},  {0.1, 0.2, 0, 0, 0, 0},
+            };
 
             // Event loop exit flag
             bool quit = false;

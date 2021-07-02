@@ -12,9 +12,11 @@ void Renderer::Clear(uint8_t colour) noexcept
 
 void Renderer::Render(const std::vector<Vertex>& vertices) noexcept
 {
-    for (int i = 0; i < vertices.size() / 3; i += 3)
+    int i = 0;
+    while (i < vertices.size())
     {
         m_rasterizer.Rasterize(vertices[i], vertices[i + 1], vertices[i + 2]);
+        i += 3;
     }
 }
 
