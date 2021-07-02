@@ -13,7 +13,7 @@ class Renderer
   public:
     Renderer()
     {
-        m_backbuffer.reserve(RENDER_HEIGHT * RENDER_HEIGHT);
+        m_backbuffer.assign(RENDER_HEIGHT * RENDER_WIDTH, 0);
     }
 
     void Clear(uint8_t colour) noexcept;

@@ -20,10 +20,11 @@ void CopyImageToTexture(SDL_Texture* texture, const uint8_t* pixels)
         {
             uint32_t index = y * OneBit::RENDER_WIDTH + x;
 
-            texPixels[index * 4 + 0] = pixels[index];
-            texPixels[index * 4 + 1] = pixels[index];
-            texPixels[index * 4 + 2] = pixels[index];
-            texPixels[index * 4 + 3] = 255;
+            uint8_t colour = pixels[index];
+            texPixels[(index * 4) + 0] = 255;
+            texPixels[(index * 4) + 1] = pixels[index];
+            texPixels[(index * 4) + 2] = pixels[index];
+            texPixels[(index * 4) + 3] = pixels[index];
         }
     }
 
@@ -59,7 +60,7 @@ int main()
             SDL_RenderSetLogicalSize(renderer, OneBit::RENDER_WIDTH, OneBit::RENDER_HEIGHT);
 
             SDL_Texture* renderTexture =
-                SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, OneBit::RENDER_WIDTH,
+                SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, OneBit::RENDER_WIDTH,
                                   OneBit::RENDER_HEIGHT);
 
             OneBit::Renderer obRenderer;
@@ -67,7 +68,7 @@ int main()
 
             auto backbuffer = obRenderer.GetBackbuffer();
 
-            // CopyImageToTexture(renderTexture, backbuffer.data());
+            CopyImageToTexture(renderTexture, backbuffer.data());
 
             // Event loop exit flag
             bool quit = false;
