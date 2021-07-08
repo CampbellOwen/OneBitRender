@@ -64,8 +64,8 @@ int main()
             obRenderer.SetLineColour(OneBit::LineColour::BLACK);
 
             std::vector<OneBit::Vertex> vertices = {
-                {0.5, 0.25, 0, 0, 0, 0}, {0.75, 0.75, 0, 0, 0, 0}, {0.25, 0.75, 0, 0, 0, 0},
-                {0.1, 0.1, 0, 0, 0, 0},  {0.2, 0.15, 0, 0, 0, 0},  {0.1, 0.2, 0, 0, 0, 0},
+                {0.5, 0.1, 0, 0, 0, 0}, {0.9, 0.9, 0, 0, 0, 0},  {0.1, 0.9, 0, 0, 0, 0},
+                {0.1, 0.1, 0, 0, 0, 0}, {0.2, 0.15, 0, 0, 0, 0}, {0.1, 0.2, 0, 0, 0, 0},
             };
 
             // Event loop exit flag
@@ -96,10 +96,10 @@ int main()
                 //                                                           : OneBit::ShadingType::FLAT;
                 //}
 
-                vertices[0].y = 0.25 + (0.2 * sin(0.01 * t));
-                vertices[1].y = 0.75 + (0.2 * sin(0.01 * t + 10));
-                vertices[2].y = 0.75 + (0.2 * sin(0.01 * t + 20));
-
+                //                vertices[0].y = 0.25 + (0.2 * sin(0.01 * t));
+                //                vertices[1].y = 0.75 + (0.2 * sin(0.01 * t + 10));
+                //                vertices[2].y = 0.75 + (0.2 * sin(0.01 * t + 20));
+                //
                 obRenderer.Clear(255);
 
                 obRenderer.SetShadingType(shadingType);
