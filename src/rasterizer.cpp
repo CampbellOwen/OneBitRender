@@ -2,13 +2,58 @@
 
 #include "OneBitRender/constants.h"
 
+#include <iostream>
+#include <limits>
+
 namespace OneBit
 {
+
+static bool OutOf16(int32_t x)
+{
+    const auto min16 = std::numeric_limits<int16_t>::min();
+    const auto max16 = std::numeric_limits<int16_t>::max();
+
+    return (x < 0 && x <= min16) || (x > 0 && x >= max16);
+}
+
+static int32_t clamp(int32_t x, int32_t min, int32_t max)
+{
+    if (x < min)
+    {
+        x = min;
+    }
+    if (x > max)
+    {
+        x = max;
+    }
+
+    return x;
+}
+
+static int32_t clamp16(int32_t x)
+{
+    static const auto min16 = std::numeric_limits<int16_t>::min();
+    static const auto max16 = std::numeric_limits<int16_t>::max();
+    return clamp(x, min16, max16);
+}
 
 static int32_t orient2d(const Point2D& a, const Point2D& b, const Point2D& c) noexcept
 {
     // Computes 2D determinant
-    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+
+    auto x1 = (b.x - a.x);
+
+    auto y1 = (c.y - a.y);
+
+    auto x2 = (c.x - a.x);
+    auto y2 = (b.y - a.y);
+
+    auto mul1 = (x1 * y1);
+    auto mul2 = (y2 * x2);
+
+    return mul1 - mul2;
+
+    // return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
 static int32_t orient2d(const Edge& edge, const Point2D& p) noexcept
@@ -16,9 +61,9 @@ static int32_t orient2d(const Edge& edge, const Point2D& p) noexcept
     return orient2d(edge.a, edge.b, p);
 }
 
-static uint32_t min3(uint32_t a, uint32_t b, uint32_t c)
+static int32_t min3(int32_t a, int32_t b, int32_t c)
 {
-    uint32_t min = a;
+    int32_t min = a;
     if (b < min)
     {
         min = b;
@@ -30,9 +75,9 @@ static uint32_t min3(uint32_t a, uint32_t b, uint32_t c)
     return min;
 }
 
-static uint32_t max3(uint32_t a, uint32_t b, uint32_t c)
+static int32_t max3(int32_t a, int32_t b, int32_t c)
 {
-    uint32_t max = a;
+    int32_t max = a;
     if (b > max)
     {
         max = b;
@@ -112,6 +157,7 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
 {
     // Snap to integer grid
     // TODO: Support subpixel precision by making this fixed point.
+
     Point2D p0{v0.x * RENDER_WIDTH, v0.y * RENDER_HEIGHT};
     Point2D p1{v1.x * RENDER_WIDTH, v1.y * RENDER_HEIGHT};
     Point2D p2{v2.x * RENDER_WIDTH, v2.y * RENDER_HEIGHT};
@@ -154,20 +200,55 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
         pMin.y = 0;
     }
 
-    Point2D p{0, 0};
+    // Triangle Setup
+    int32_t A01 = p0.y - p1.y, B01 = p1.x - p0.x;
+    int32_t A12 = p1.y - p2.y, B12 = p2.x - p1.x;
+    int32_t A20 = p2.y - p0.y, B20 = p0.x - p2.x;
+
+    Edge e01{p0, p1};
+    Edge e12{p1, p2};
+    Edge e20{p2, p0};
+
+    int32_t twoTriangleArea = orient2d(e01, p2);
+
+    // Barycentric coordinates at minX/minY
+    Point2D p = pMin;
+    int32_t w0_row = orient2d(e12, p);
+    int32_t w1_row = orient2d(e20, p);
+    int32_t w2_row = orient2d(e01, p);
+
     for (p.y = pMin.y; p.y <= pMax.y; p.y++)
     {
+
+        // Barycentric coordinates at start of row
+        int32_t w0 = w0_row;
+        int32_t w1 = w1_row;
+        int32_t w2 = w2_row;
+
         for (p.x = pMin.x; p.x <= pMax.x; p.x++)
         {
-            int32_t w0 = orient2d(p0, p1, p);
-            int32_t w1 = orient2d(p1, p2, p);
-            int32_t w2 = orient2d(p2, p0, p);
-
-            if (w0 >= 0 && w1 >= 0 && w2 >= 0)
+            // if (w0 >= 0 && w1 >= 0 && w2 >= 0)
+            if ((w0 | w1 | w2) >= 0)
             {
-                m_backbuffer[p.y * RENDER_WIDTH + p.x] = 0;
+
+                float l1 = static_cast<float>(w1) / twoTriangleArea;
+                float l2 = static_cast<float>(w2) / twoTriangleArea;
+
+                auto brightness =
+                    v0.brightness + (l1 * (v1.brightness - v0.brightness)) + (l2 * (v2.brightness - v0.brightness));
+                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>(brightness);
             }
+
+            // One step to the right
+            w0 += A12;
+            w1 += A20;
+            w2 += A01;
         }
+
+        // One row step
+        w0_row += B12;
+        w1_row += B20;
+        w2_row += B01;
     }
 }
 

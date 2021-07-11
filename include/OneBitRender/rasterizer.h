@@ -10,11 +10,20 @@ namespace OneBit
 
 struct Point2D
 {
-    uint32_t x, y;
+    int32_t x, y;
+    void Add(const Point2D& other) noexcept
+    {
+        x = x + other.x;
+        y = y + other.y;
+    }
 };
 
 struct Edge
 {
+    Edge(const Point2D& a, const Point2D& b) : a(a), b(b)
+    {
+    }
+
     Point2D a, b;
 };
 
