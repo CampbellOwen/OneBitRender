@@ -211,6 +211,11 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
 
     int32_t twoTriangleArea = orient2d(e01, p2);
 
+    int32_t twoTriangleBright0 = twoTriangleArea * v0.brightness;
+
+    int32_t brightness1 = v1.brightness - v0.brightness;
+    int32_t brightness2 = v2.brightness - v0.brightness;
+
     // Barycentric coordinates at minX/minY
     Point2D p = pMin;
     int32_t w0_row = orient2d(e12, p);
@@ -231,12 +236,8 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
             if ((w0 | w1 | w2) >= 0)
             {
 
-                float l1 = static_cast<float>(w1) / twoTriangleArea;
-                float l2 = static_cast<float>(w2) / twoTriangleArea;
-
-                auto brightness =
-                    v0.brightness + (l1 * (v1.brightness - v0.brightness)) + (l2 * (v2.brightness - v0.brightness));
-                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>(brightness);
+                auto brightness = twoTriangleBright0 + (w1 * brightness1) + (w2 * brightness2);
+                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>(brightness / twoTriangleArea);
             }
 
             // One step to the right
