@@ -204,7 +204,8 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
     }
 
     // Add 8 bits of subpixel precision
-    static const int subStep = 256;
+    static const int subPixelBits = 8;
+    static const int subStep = 1 << subPixelBits;
     static const int subMask = subStep - 1;
 
     p0.x *= subStep;
@@ -216,7 +217,7 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
     p2.x *= subStep;
     p2.y *= subStep;
 
-    // Round to nearest integer multiple
+    // Round to nearest integer multiple of subStep
     p0.x = (p0.x + subMask) & ~subMask;
     p0.y = (p0.y + subMask) & ~subMask;
 
@@ -235,12 +236,14 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
     Edge e12{p1, p2};
     Edge e20{p2, p0};
 
-    int32_t twoTriangleArea = orient2d(e01, p2);
+    int64_t twoTriangleArea = orient2d(p0, p1, p2);
+    int64_t twoTriangleBright0 = (twoTriangleArea * v0.brightness);
 
-    int32_t twoTriangleBright0 = twoTriangleArea * v0.brightness;
+    int32_t twoTriangleArea32 = twoTriangleArea >> subPixelBits;
+    int32_t twoTriangleBright032 = twoTriangleBright0 >> subPixelBits;
 
-    int32_t brightness1 = v1.brightness - v0.brightness;
-    int32_t brightness2 = v2.brightness - v0.brightness;
+    int64_t brightness1 = v1.brightness - v0.brightness;
+    int64_t brightness2 = v2.brightness - v0.brightness;
 
     // Barycentric coordinates at minX/minY
     Point2D p = pMin;
@@ -249,9 +252,9 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
     int64_t w2_row = orient2d(e01, p);
 
     // subMask bits stay constant, safe to shift them out
-    w0_row = w0_row >> 8;
-    w1_row = w1_row >> 8;
-    w2_row = w2_row >> 8;
+    w0_row = w0_row >> subPixelBits;
+    w1_row = w1_row >> subPixelBits;
+    w2_row = w2_row >> subPixelBits;
 
     for (p.y = pMin.y; p.y <= pMax.y; p.y++)
     {
@@ -263,13 +266,11 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
 
         for (p.x = pMin.x; p.x <= pMax.x; p.x++)
         {
-            // if (w0 >= 0 && w1 >= 0 && w2 >= 0)
             if ((w0 | w1 | w2) >= 0)
             {
 
-                // auto brightness = twoTriangleBright0 + (w1 * brightness1) + (w2 * brightness2);
-                // m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>(brightness / twoTriangleArea);
-                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = 128;
+                auto brightness = (twoTriangleBright032) + (w1 * brightness1) + (w2 * brightness2);
+                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>((brightness / (twoTriangleArea32)));
             }
 
             // One step to the right

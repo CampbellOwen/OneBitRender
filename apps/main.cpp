@@ -65,7 +65,7 @@ int main()
 
             std::vector<OneBit::Vertex> vertices = {
                 {0.0, 0.0, 0, 0, 0, 0}, {0.999, 0.999, 0, 0, 0, 128}, {0.0, 0.999, 0, 0, 0, 255},
-                {0.1, 0.1, 0, 0, 0, 0}, {0.2, 0.15, 0, 0, 0, 128},    {0.1, 0.2, 0, 0, 0, 255},
+                //{0.1, 0.1, 0, 0, 0, 0}, {0.2, 0.15, 0, 0, 0, 128},    {0.1, 0.2, 0, 0, 0, 255},
             };
 
             // Event loop exit flag
@@ -101,7 +101,7 @@ int main()
                 //                vertices[2].y = 0.75 + (0.2 * sin(0.01 * t + 20));
                 //
                 // vertices[0].x = t % OneBit::RENDER_WIDTH;
-                vertices[0].x = static_cast<float>(((t / 8) % OneBit::RENDER_WIDTH)) / OneBit::RENDER_WIDTH;
+                vertices[0].x = static_cast<float>(((t / 2) % OneBit::RENDER_WIDTH)) / OneBit::RENDER_WIDTH;
                 obRenderer.Clear(255);
 
                 obRenderer.SetShadingType(shadingType);
