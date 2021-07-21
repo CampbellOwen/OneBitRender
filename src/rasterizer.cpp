@@ -153,10 +153,13 @@ void Rasterizer::DrawLine(const Edge& edge) noexcept
     }
 }
 
+// Very much inspired by/taken from Fabian Giesen's amazing series
+// https://fgiesen.wordpress.com/2013/02/10/optimizing-the-basic-rasterizer/
 void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
 {
     // Snap to integer grid
     // TODO: Support subpixel precision by making this fixed point.
+    // TODO: Support proper edge fill rules
 
     Point2D p0{v0.x * RENDER_WIDTH, v0.y * RENDER_HEIGHT};
     Point2D p1{v1.x * RENDER_WIDTH, v1.y * RENDER_HEIGHT};
