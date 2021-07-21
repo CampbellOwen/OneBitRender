@@ -8,6 +8,34 @@
 namespace OneBit
 {
 
+// clang-format off
+static const int bayer4[16] = {
+    0 , 12, 3 , 15,
+    8 , 4 , 11, 7 ,
+    2 , 14, 1 , 13,
+    10, 6 , 9 , 5 
+};
+// clang-format on
+
+static uint8_t toSRGB(uint8_t colour)
+{
+    return ((1.055 * (pow(colour / 255.0, 1.0 / 2.4))) - 0.055) * 255;
+}
+
+static uint8_t toLinear(uint8_t colour)
+{
+    float col = colour / 255.0;
+
+    if (col <= 0.04045)
+    {
+        return (col / 12.92) * 255;
+    }
+    else
+    {
+        return pow((col + 0.055) / 1.055, 2.4) * 255;
+    }
+}
+
 static bool OutOf16(int32_t x)
 {
     const auto min16 = std::numeric_limits<int16_t>::min();
@@ -16,7 +44,7 @@ static bool OutOf16(int32_t x)
     return (x < 0 && x <= min16) || (x > 0 && x >= max16);
 }
 
-static int32_t clamp(int32_t x, int32_t min, int32_t max)
+template <class T> static T clamp(T x, T min, T max)
 {
     if (x < min)
     {
@@ -32,8 +60,8 @@ static int32_t clamp(int32_t x, int32_t min, int32_t max)
 
 static int32_t clamp16(int32_t x)
 {
-    static const auto min16 = std::numeric_limits<int16_t>::min();
-    static const auto max16 = std::numeric_limits<int16_t>::max();
+    static const int32_t min16 = std::numeric_limits<int16_t>::min();
+    static const int32_t max16 = std::numeric_limits<int16_t>::max();
     return clamp(x, min16, max16);
 }
 
@@ -242,8 +270,12 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
     int32_t twoTriangleArea32 = twoTriangleArea >> subPixelBits;
     int32_t twoTriangleBright032 = twoTriangleBright0 >> subPixelBits;
 
-    int64_t brightness1 = v1.brightness - v0.brightness;
-    int64_t brightness2 = v2.brightness - v0.brightness;
+    uint8_t b0 = toLinear(v0.brightness);
+    uint8_t b1 = toLinear(v1.brightness);
+    uint8_t b2 = toLinear(v2.brightness);
+
+    int64_t brightness1 = b1 - b0;
+    int64_t brightness2 = b2 - b0;
 
     // Barycentric coordinates at minX/minY
     Point2D p = pMin;
@@ -270,7 +302,22 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
             {
 
                 auto brightness = (twoTriangleBright032) + (w1 * brightness1) + (w2 * brightness2);
-                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>((brightness / (twoTriangleArea32)));
+                uint32_t greyscale = toSRGB(((brightness / (twoTriangleArea32))));
+
+                auto bayerIndex = ((p.y % 4) * 4) + (p.x % 4);
+                // float fcolour = (greyscale / 255.0);
+
+                // if (fcolour < 0.0031308)
+                //{
+                //    greyscale = (12.92 * fcolour) * 255;
+                //}
+                // else
+                //{
+                //    // float clamped = ;
+                //    greyscale = clamp<float>(1.055 * pow(fcolour, 1.0 / 2.4) - 0.55, 0.0, 1.0) * 255;
+                //}
+                m_backbuffer[(p.y) * RENDER_WIDTH + p.x] = greyscale * bayer4[bayerIndex] / 16 > 128 ? 255 : 0;
+                // m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = greyscale;
             }
 
             // One step to the right
