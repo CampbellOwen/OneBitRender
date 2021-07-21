@@ -37,7 +37,7 @@ static int32_t clamp16(int32_t x)
     return clamp(x, min16, max16);
 }
 
-static int32_t orient2d(const Point2D& a, const Point2D& b, const Point2D& c) noexcept
+static int64_t orient2d(const Point2D& a, const Point2D& b, const Point2D& c) noexcept
 {
     // Computes 2D determinant
 
@@ -56,7 +56,7 @@ static int32_t orient2d(const Point2D& a, const Point2D& b, const Point2D& c) no
     // return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
-static int32_t orient2d(const Edge& edge, const Point2D& p) noexcept
+static int64_t orient2d(const Edge& edge, const Point2D& p) noexcept
 {
     return orient2d(edge.a, edge.b, p);
 }
@@ -203,10 +203,33 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
         pMin.y = 0;
     }
 
+    // Add 8 bits of subpixel precision
+    static const int subStep = 256;
+    static const int subMask = subStep - 1;
+
+    p0.x *= subStep;
+    p0.y *= subStep;
+
+    p1.x *= subStep;
+    p1.y *= subStep;
+
+    p2.x *= subStep;
+    p2.y *= subStep;
+
+    // Round to nearest integer multiple
+    p0.x = (p0.x + subMask) & ~subMask;
+    p0.y = (p0.y + subMask) & ~subMask;
+
+    p1.x = (p1.x + subMask) & ~subMask;
+    p1.y = (p1.y + subMask) & ~subMask;
+
+    p2.x = (p2.x + subMask) & ~subMask;
+    p2.y = (p2.y + subMask) & ~subMask;
+
     // Triangle Setup
-    int32_t A01 = p0.y - p1.y, B01 = p1.x - p0.x;
-    int32_t A12 = p1.y - p2.y, B12 = p2.x - p1.x;
-    int32_t A20 = p2.y - p0.y, B20 = p0.x - p2.x;
+    int64_t A01 = p0.y - p1.y, B01 = p1.x - p0.x;
+    int64_t A12 = p1.y - p2.y, B12 = p2.x - p1.x;
+    int64_t A20 = p2.y - p0.y, B20 = p0.x - p2.x;
 
     Edge e01{p0, p1};
     Edge e12{p1, p2};
@@ -221,9 +244,14 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
 
     // Barycentric coordinates at minX/minY
     Point2D p = pMin;
-    int32_t w0_row = orient2d(e12, p);
-    int32_t w1_row = orient2d(e20, p);
-    int32_t w2_row = orient2d(e01, p);
+    int64_t w0_row = orient2d(e12, p);
+    int64_t w1_row = orient2d(e20, p);
+    int64_t w2_row = orient2d(e01, p);
+
+    // subMask bits stay constant, safe to shift them out
+    w0_row = w0_row >> 8;
+    w1_row = w1_row >> 8;
+    w2_row = w2_row >> 8;
 
     for (p.y = pMin.y; p.y <= pMax.y; p.y++)
     {
@@ -239,8 +267,9 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
             if ((w0 | w1 | w2) >= 0)
             {
 
-                auto brightness = twoTriangleBright0 + (w1 * brightness1) + (w2 * brightness2);
-                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>(brightness / twoTriangleArea);
+                // auto brightness = twoTriangleBright0 + (w1 * brightness1) + (w2 * brightness2);
+                // m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>(brightness / twoTriangleArea);
+                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = 128;
             }
 
             // One step to the right

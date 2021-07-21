@@ -10,7 +10,7 @@ namespace OneBit
 
 struct Point2D
 {
-    int32_t x, y;
+    int64_t x, y;
     void Add(const Point2D& other) noexcept
     {
         x = x + other.x;
