@@ -222,6 +222,13 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
     int32_t w1_row = orient2d(e20, p);
     int32_t w2_row = orient2d(e01, p);
 
+    int32_t bright_row = (twoTriangleBright0 + (w1_row * brightness1) + (w2_row * brightness2)) / twoTriangleArea;
+    int32_t A20B1 = (A20 * v1.brightness) / twoTriangleArea;
+    int32_t A01B2 = (A01 * v2.brightness) / twoTriangleArea;
+
+    int32_t brightStep = ((A20 * brightness1) + (A01 * brightness2));
+    int32_t brightRowStep = ((B20 * brightness1) + (B01 * brightness2));
+
     for (p.y = pMin.y; p.y <= pMax.y; p.y++)
     {
 
@@ -230,26 +237,33 @@ void Rasterizer::Rasterize(Vertex v0, Vertex v1, Vertex v2) noexcept
         int32_t w1 = w1_row;
         int32_t w2 = w2_row;
 
+        int32_t bright = bright_row;
+
         for (p.x = pMin.x; p.x <= pMax.x; p.x++)
         {
             // if (w0 >= 0 && w1 >= 0 && w2 >= 0)
             if ((w0 | w1 | w2) >= 0)
             {
 
-                auto brightness = twoTriangleBright0 + (w1 * brightness1) + (w2 * brightness2);
-                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = static_cast<uint8_t>(brightness / twoTriangleArea);
+                // auto brightness = twoTriangleBright0 + (w1 * brightness1) + (w2 * brightness2);
+                // brightness = brightness / twoTriangleArea;
+                m_backbuffer[(p.y) * RENDER_WIDTH + (p.x)] = (bright / twoTriangleArea);
             }
 
             // One step to the right
             w0 += A12;
             w1 += A20;
             w2 += A01;
+
+            bright += brightStep;
         }
 
         // One row step
         w0_row += B12;
         w1_row += B20;
         w2_row += B01;
+
+        bright_row += brightRowStep;
     }
 }
 
